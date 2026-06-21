@@ -1,0 +1,37 @@
+HOW WE'RE STRUCTURING OUR PITCH:
+
+1) OPENING STATEMENT:
+
+--Intent appears in two forms: unstructured query from an end user, or doc- patient convo
+--Today's models don't really extract intent, just do kw matching, not enough semantic analysis 
+--instead of surface level similarity, we do grounding against the catalog so that we factor in clinical relevance, safety, availability, and appropriateness. 
+-- then bring out 5-10 products recommended, along-with reasoning
+(CUE AN EXAMPLE BASED ON A SEMANTIC ANALYSIS I.E. MISUNDERSTANDING INTENT) (~2 MIN, not more)
+
+2) TACKLE THIS PROBLEM FROM MORE ANGLES:
+How are we different from a pharmacist
+
+-- They need a full handwritten prescription, while we can merely interpret doctor patient convos and simple user queries also. 
+-- Can be thought of as a competitor to pharmacist in this aspect.
+-- Ultimately a pharmacist helper, since this only gives a list of recommended products and doesn't zero in one specific one. (<1 MIN)
+
+3) START WITH THE TECHNICAL DEMO: 
+How our product deals with the following unit cases: 
+a) Intent at the ingredient level (Face Wash and Shampoo)
+b) Intent for Allergy prevention (No protein bars with peanuts in case of a peanut allergen)
+c) Intent in case of underlying conditions (Pregnancy, diabetes)
+d) Intent analysis for Diet (Users with preference towards Veg/Vegan medicine (don't recommend Omega - 3 fatty acid) )
+e) Intent with respect to Age (Paediatric, adult and elderly- what medicines should and shouldn't they be prescribed) (~4 MINS)
+
+
+4) COMPETITOR ANALYSIS:
+
+-- Instead of direct comparisons with other startups:
+
+Category 1: Pharmacists (whatever was before)
+Category 2: health bots (Designed for health education, and not safe product recommendations) 
+Category 3: LLM powered bots (UX is great, clinically not very reliable even tho we use LLMs fine tuned on a medical use case)
+Category 4: E commerce recommendation systems (look at it commercially)
+(~1 MIN)
+
+

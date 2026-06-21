@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────
+# Apollo Clinical Intelligence — .dockerignore
+# ─────────────────────────────────────────────
+# Files excluded from the Docker build context.
+# This keeps image builds fast by not uploading
+# large data files to the Docker daemon.
+
+# Artifacts (large binary files – mounted as volumes at runtime)
+final_implementation/artifacts/
+
+# Original catalog CSV (large; mounted as volume)
+End_Pipeline/Main_Apollo_Catalog.csv
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+
+# Jupyter checkpoints
+**/.ipynb_checkpoints
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Logs
+logs/
+*.log
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Docs (not needed inside container)
+docs/
+
+# Notebook files (not part of production runtime)
+**/*.ipynb

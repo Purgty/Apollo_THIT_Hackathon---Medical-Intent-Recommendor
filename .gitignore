@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────
+# Apollo Clinical Intelligence — .gitignore
+# ─────────────────────────────────────────────
+
+# ── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+pip-wheel-metadata/
+
+# ── Virtual environments ───────────────────────
+.venv/
+venv/
+env/
+ENV/
+.conda/
+
+# ── Jupyter notebooks & checkpoints ───────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+*.ipynb
+
+# ── Environment variables ──────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Large generated artifacts ──────────────────
+# Rebuilt locally via Stage 1 & Stage 2.
+final_implementation/artifacts/
+
+# ── Large raw data files (not for GitHub) ──────
+# The main catalog CSV (90MB+) — bring your own
+End_Pipeline/Main_Apollo_Catalog.csv
+# All dataset CSV / JSON files in the Datasets directory
+Datasets/
+# Zip files
+*.zip
+
+# ── Old prototype / exploration code ──────────
+# Only the final_implementation/ is production code
+Chat Intent/
+End_Pipeline/
+Perplexity Workflows/
+
+# ── HuggingFace / torch model cache ───────────
+.cache/
+*.cache/
+
+# ── Logs ──────────────────────────────────────
+logs/
+*.log
+
+# ── OS ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Docker ────────────────────────────────────
+# Keep Dockerfile and compose, but ignore local build state
+.docker/
+
+# ── Misc ──────────────────────────────────────
+*.bak
+*.tmp
+*.pptx
+*.xlsx

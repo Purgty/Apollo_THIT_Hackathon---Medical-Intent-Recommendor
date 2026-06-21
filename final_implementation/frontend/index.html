@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apollo — Clinical Intelligence</title>
+  <meta name="description" content="AI-powered clinical product recommendation engine. Paste a consultation transcript and receive evidence-ranked pharmacy recommendations instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─────────────────────────────────────────────
+       Design Tokens
+    ───────────────────────────────────────────── */
+    :root {
+      --brand:        #C0392B;
+      --brand-deep:   #922B21;
+      --brand-tint:   #FAF0EE;
+      --ink:          #111111;
+      --ink-mid:      #444444;
+      --ink-light:    #888888;
+      --rule:         #DDD8D2;
+      --bg:           #F8F6F3;
+      --surface:      #FFFFFF;
+      --surface-warm: #FDFBF9;
+      --shadow-sm:    0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-md:    0 2px 8px rgba(0,0,0,0.07), 0 8px 32px rgba(0,0,0,0.06);
+      --shadow-lift:  0 8px 40px rgba(0,0,0,0.10);
+      --radius:       3px;
+      --radius-lg:    6px;
+      --font-serif:   'Cormorant Garamond', Georgia, serif;
+      --font-sans:    'DM Sans', system-ui, sans-serif;
+      --space:        8px;
+    }
+
+    /* ─────────────────────────────────────────────
+       Reset & Base
+    ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas: "header" "main" "footer";
+    }
+
+    /* ─────────────────────────────────────────────
+       Header
+    ───────────────────────────────────────────── */
+    header {
+      grid-area: header;
+      background: var(--surface);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 0 var(--rule), var(--shadow-sm);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .header-wordmark {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .header-wordmark span {
+      color: var(--brand);
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--rule);
+    }
+
+    .header-subtitle {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      font-weight: 400;
+    }
+
+    #status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background 0.3s;
+    }
+    #status-dot.online  { background: #27AE60; }
+    #status-dot.loading { background: var(--brand); animation: pulse 1.2s infinite; }
+    #status-dot.offline { background: #E74C3C; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ─────────────────────────────────────────────
+       Main Layout
+    ───────────────────────────────────────────── */
+    main {
+      grid-area: main;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      grid-template-rows: 1fr;
+      max-height: calc(100vh - 64px - 56px);
+      overflow: hidden;
+    }
+
+    /* ─────────────────────────────────────────────
+       Left Panel — Conversation
+    ───────────────────────────────────────────── */
+    .panel-conversation {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--rule);
+      overflow: hidden;
+    }
+
+    /* Welcome screen */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 64px 56px;
+    }
+
+    .welcome-eyebrow {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 20px;
+    }
+
+    .welcome-heading {
+      font-family: var(--font-serif);
+      font-size: clamp(2.25rem, 4vw, 3.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 20px;
+      max-width: 580px;
+    }
+
+    .welcome-heading em {
+      font-style: italic;
+      color: var(--brand);
+    }
+
+    .welcome-body {
+      font-size: 0.9375rem;
+      line-height: 1.75;
+      color: var(--ink-mid);
+      max-width: 480px;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .welcome-meta {
+      display: flex;
+      gap: 32px;
+    }
+
+    .welcome-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .welcome-stat-number {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .welcome-stat-label {
+      font-size: 0.6875rem;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      font-weight: 400;
+    }
+
+    /* Conversation thread */
+    .thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scroll-behavior: smooth;
+    }
+
+    .thread::-webkit-scrollbar { width: 4px; }
+    .thread::-webkit-scrollbar-track { background: transparent; }
+    .thread::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    /* Message bubble: user input */
+    .msg-user {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--brand);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .msg-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .msg-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    .msg-text {
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--ink-mid);
+      font-weight: 300;
+      white-space: pre-wrap;
+    }
+
+    /* Extracted intent card */
+    .intent-card {
+      background: var(--surface-warm);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .intent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+      margin-top: 14px;
+    }
+
+    .intent-field {}
+
+    .intent-field-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+
+    .intent-field-value {
+      font-size: 0.875rem;
+      color: var(--ink);
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      color: var(--ink-mid);
+      font-weight: 400;
+    }
+
+    .tag.alert {
+      background: #FEF2F0;
+      border-color: #F5A99D;
+      color: var(--brand-deep);
+    }
+
+    .tag.success {
+      background: #F0FAF4;
+      border-color: #93D6AC;
+      color: #1E6E42;
+    }
+
+    /* Skeleton loading */
+    .skeleton-block {
+      height: 16px;
+      background: linear-gradient(90deg, #eee 25%, #f8f8f8 50%, #eee 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 3px;
+      margin-bottom: 8px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ─────────────────────────────────────────────
+       Right Panel — Recommendations
+    ───────────────────────────────────────────── */
+    .panel-results {
+      background: var(--bg);
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-results::-webkit-scrollbar { width: 4px; }
+    .panel-results::-webkit-scrollbar-track { background: transparent; }
+    .panel-results::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    .results-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 4px;
+    }
+
+    .results-title {
+      font-family: var(--font-serif);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .results-count {
+      font-size: 0.75rem;
+      color: var(--ink-light);
+    }
+
+    /* Empty state for right panel */
+    .results-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 40px 24px;
+    }
+
+    .results-empty-icon {
+      font-size: 2rem;
+      opacity: 0.2;
+    }
+
+    .results-empty-text {
+      font-size: 0.8125rem;
+      color: var(--ink-light);
+      line-height: 1.6;
+      max-width: 200px;
+    }
+
+    /* Product card */
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      cursor: default;
+      transition: box-shadow 0.18s, transform 0.18s;
+      position: relative;
+    }
+
+    .product-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .product-card.rank-1 {
+      border-left: 3px solid var(--brand);
+    }
+
+    .product-rank {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 300;
+      color: var(--rule);
+      line-height: 1;
+    }
+
+    .product-rank.rank-1 { color: var(--brand); font-weight: 500; }
+
+    .product-name {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      padding-right: 28px;
+    }
+
+    .product-molecule {
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      font-style: italic;
+      margin-bottom: 10px;
+      font-family: var(--font-serif);
+    }
+
+    .product-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .product-badge {
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 2px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      color: var(--ink-mid);
+    }
+
+    .product-badge.rx { background: #FEF2F0; border-color: #F5A99D; color: var(--brand-deep); }
+    .product-badge.otc { background: #F0FAF4; border-color: #93D6AC; color: #1E6E42; }
+    .product-badge.veg { background: #F0FAF4; border-color: #93D6AC; color: #1E6E42; }
+
+    .product-score-bar {
+      height: 2px;
+      background: var(--rule);
+      border-radius: 1px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .product-score-fill {
+      height: 100%;
+      background: var(--brand);
+      border-radius: 1px;
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .product-reasons {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .product-reason {
+      font-size: 0.75rem;
+      color: var(--ink-mid);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-weight: 300;
+    }
+
+    .product-reason-icon {
+      color: #27AE60;
+      font-size: 0.65rem;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .product-price {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .product-price span {
+      font-size: 0.6875rem;
+      font-weight: 400;
+      color: var(--ink-light);
+      font-family: var(--font-sans);
+    }
+
+    /* ─────────────────────────────────────────────
+       Footer — Input Bar
+    ───────────────────────────────────────────── */
+    footer {
+      grid-area: footer;
+      background: var(--surface);
+      border-top: 1px solid var(--rule);
+      padding: 12px 48px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 56px;
+      box-shadow: 0 -1px 0 var(--rule);
+    }
+
+    .input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--ink-mid);
+      box-shadow: 0 0 0 3px rgba(17,17,17,0.06);
+    }
+
+    #conversation-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0 16px;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      color: var(--ink);
+      font-weight: 300;
+      outline: none;
+      resize: none;
+      height: 32px;
+      line-height: 32px;
+    }
+
+    #conversation-input::placeholder { color: var(--ink-light); }
+
+    #btn-submit {
+      height: 32px;
+      padding: 0 20px;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #btn-submit:hover:not(:disabled) { background: var(--brand-deep); }
+
+    #btn-submit:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .footer-hint {
+      font-size: 0.6875rem;
+      color: var(--ink-light);
+      white-space: nowrap;
+      padding-bottom: 8px;
+    }
+
+    /* ─────────────────────────────────────────────
+       Pipeline timing chip
+    ───────────────────────────────────────────── */
+    .timing-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.6875rem;
+      color: var(--ink-light);
+      margin-top: 6px;
+    }
+
+    .timing-chip::before {
+      content: '◎';
+      color: var(--brand);
+      font-size: 0.6rem;
+    }
+
+    /* ─────────────────────────────────────────────
+       Error State
+    ───────────────────────────────────────────── */
+    .error-card {
+      background: #FEF2F0;
+      border: 1px solid #F5A99D;
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+    }
+
+    .error-label {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--brand-deep);
+      margin-bottom: 6px;
+    }
+
+    .error-msg {
+      font-size: 0.875rem;
+      color: var(--brand-deep);
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ─────────────────────────────────────────────
+       Utilities
+    ───────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ─────────────────────────────────────────────
+       Scrollbar — Firefox
+    ───────────────────────────────────────────── */
+    .thread, .panel-results {
+      scrollbar-width: thin;
+      scrollbar-color: var(--rule) transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════ HEADER ══════════════════ -->
+  <header>
+    <div class="header-brand">
+      <span class="header-wordmark">Apollo<span>.</span></span>
+      <div class="header-divider"></div>
+      <span class="header-subtitle">Clinical Intelligence</span>
+    </div>
+    <div class="header-status">
+      <div id="status-dot"></div>
+      <span id="status-text">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main>
+
+    <!-- Left: Conversation Panel -->
+    <section class="panel-conversation" id="panel-left">
+
+      <!-- Welcome (shown until first submission) -->
+      <div class="welcome" id="welcome-screen">
+        <p class="welcome-eyebrow">Stryker × Apollo &mdash; AI Pipeline</p>
+        <h1 class="welcome-heading">Turn a consultation<br>into a <em>clinical recommendation.</em></h1>
+        <p class="welcome-body">
+          Paste any doctor–patient transcript below. The pipeline extracts clinical intent using MedLlama, then retrieves and ranks the most appropriate Apollo pharmacy products in seconds.
+        </p>
+        <div class="welcome-meta">
+          <div class="welcome-stat">
+            <span class="welcome-stat-number">317K</span>
+            <span class="welcome-stat-label">Products Indexed</span>
+          </div>
+          <div class="welcome-stat">
+            <span class="welcome-stat-number">4</span>
+            <span class="welcome-stat-label">Pipeline Stages</span>
+          </div>
+          <div class="welcome-stat">
+            <span class="welcome-stat-number">5</span>
+            <span class="welcome-stat-label">Safety Filters</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message thread (shown after first submission) -->
+      <div class="thread hidden" id="thread"></div>
+
+    </section>
+
+    <!-- Right: Results Panel -->
+    <section class="panel-results" id="panel-results">
+      <div class="results-empty" id="results-empty">
+        <div class="results-empty-icon">⚕</div>
+        <p class="results-empty-text">Product recommendations will appear here after you submit a consultation.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════════════ FOOTER / INPUT ══════════════════ -->
+  <footer>
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="conversation-input"
+        placeholder="Paste a doctor–patient consultation transcript…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="btn-submit">Analyse →</button>
+    </div>
+    <span class="footer-hint">Ctrl + Enter</span>
+  </footer>
+
+  <!-- ══════════════════ SCRIPT ══════════════════ -->
+  <script>
+    const API_BASE = 'http://localhost:8000';
+
+    const statusDot  = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const input      = document.getElementById('conversation-input');
+    const btn        = document.getElementById('btn-submit');
+    const thread     = document.getElementById('thread');
+    const welcome    = document.getElementById('welcome-screen');
+    const panelRes   = document.getElementById('panel-results');
+    const emptyState = document.getElementById('results-empty');
+
+    /* ──────────────────────────────────────────
+       Health check on load
+    ────────────────────────────────────────── */
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        if (data.faiss_index_loaded) {
+          setStatus('online', `Online — ${data.faiss_vector_count?.toLocaleString() ?? '—'} vectors`);
+        } else {
+          setStatus('loading', 'Building index…');
+          setTimeout(checkHealth, 8000);
+        }
+      } catch {
+        setStatus('offline', 'API offline');
+        setTimeout(checkHealth, 5000);
+      }
+    }
+
+    function setStatus(state, text) {
+      statusDot.className = state;
+      statusText.textContent = text;
+    }
+
+    checkHealth();
+
+    /* ──────────────────────────────────────────
+       Keyboard shortcut
+    ────────────────────────────────────────── */
+    input.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submit();
+    });
+    btn.addEventListener('click', submit);
+
+    /* ──────────────────────────────────────────
+       Main submit
+    ────────────────────────────────────────── */
+    async function submit() {
+      const conversation = input.value.trim();
+      if (!conversation) return;
+
+      // Switch view from welcome to thread
+      welcome.classList.add('hidden');
+      thread.classList.remove('hidden');
+
+      input.value = '';
+      btn.disabled = true;
+      setStatus('loading', 'Analysing…');
+
+      // Append user message
+      appendUserMessage(conversation);
+
+      // Append loading skeleton
+      const skeletonEl = appendSkeleton();
+
+      // Clear right panel
+      clearResults();
+
+      try {
+        const res = await fetch(`${API_BASE}/v1/recommend`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation, top_k: 10 })
+        });
+
+        skeletonEl.remove();
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          appendError(err.detail?.message || `HTTP ${res.status} — check that the API server is running.`);
+          setStatus('offline', 'Request failed');
+          return;
+        }
+
+        const data = await res.json();
+        appendIntentCard(data.extracted_intent, data.pipeline_metadata);
+        renderResults(data.recommendations);
+        setStatus('online', `Done — ${data.pipeline_metadata?.total_processing_time_ms?.toFixed(0)}ms`);
+
+      } catch (err) {
+        skeletonEl.remove();
+        appendError(`Could not reach the API at ${API_BASE}. Make sure the FastAPI server is running.`);
+        setStatus('offline', 'API offline');
+      } finally {
+        btn.disabled = false;
+        input.focus();
+      }
+    }
+
+    /* ──────────────────────────────────────────
+       DOM helpers — Left Panel
+    ────────────────────────────────────────── */
+    function appendUserMessage(text) {
+      const el = document.createElement('div');
+      el.className = 'msg-user';
+      el.innerHTML = `
+        <div class="msg-label">Consultation transcript</div>
+        <div class="msg-text">${escHtml(text)}</div>
+      `;
+      thread.appendChild(el);
+      scrollThread();
+    }
+
+    function appendSkeleton() {
+      const el = document.createElement('div');
+      el.className = 'intent-card';
+      el.innerHTML = `
+        <div class="msg-label">Extracting clinical intent…</div>
+        <div class="skeleton-block" style="width:60%"></div>
+        <div class="skeleton-block" style="width:85%"></div>
+        <div class="skeleton-block" style="width:45%"></div>
+      `;
+      thread.appendChild(el);
+      scrollThread();
+      return el;
+    }
+
+    function appendIntentCard(intent, meta) {
+      if (!intent) return;
+
+      const syms  = arr(intent.symptoms);
+      const diag  = arr(intent.diagnosed_conditions);
+      const aller = arr(intent.allergies);
+      const recMeds = (intent.recommended_medications || []).map(m => m.name).filter(Boolean);
+      const curMeds = (intent.current_medications || []).map(m => m.name).filter(Boolean);
+      const contra  = arr(intent.contraindications);
+
+      const timing = meta ? `
+        <div class="timing-chip">
+          LLM: ${meta.llm_extraction_time_ms?.toFixed(0) ?? '—'}ms &nbsp;·&nbsp;
+          Retrieval: ${meta.retrieval_time_ms?.toFixed(0) ?? '—'}ms &nbsp;·&nbsp;
+          Total: ${meta.total_processing_time_ms?.toFixed(0) ?? '—'}ms
+        </div>` : '';
+
+      const el = document.createElement('div');
+      el.className = 'intent-card';
+      el.innerHTML = `
+        <div class="msg-label">Extracted clinical intent</div>
+        <div class="intent-grid">
+          ${fieldHtml('Symptoms', tagListHtml(syms, ''))}
+          ${fieldHtml('Diagnoses', tagListHtml(diag, ''))}
+          ${fieldHtml('Allergies / Contraindications', tagListHtml([...aller, ...contra], 'alert'))}
+          ${fieldHtml('Recommended', tagListHtml(recMeds, 'success'))}
+          ${fieldHtml('Currently On', tagListHtml(curMeds, ''))}
+          ${intent.clinical_notes ? fieldHtml('Clinical Note', `<span style="font-style:italic;font-size:.875rem;color:var(--ink-mid);font-weight:300">${escHtml(intent.clinical_notes)}</span>`) : ''}
+        </div>
+        ${timing}
+      `;
+      thread.appendChild(el);
+      scrollThread();
+    }
+
+    function appendError(msg) {
+      const el = document.createElement('div');
+      el.className = 'error-card';
+      el.innerHTML = `<div class="error-label">Pipeline Error</div><div class="error-msg">${escHtml(msg)}</div>`;
+      thread.appendChild(el);
+      scrollThread();
+    }
+
+    function fieldHtml(label, value) {
+      if (!value || value === '<div class="tag-list"></div>') return '';
+      return `<div class="intent-field"><div class="intent-field-label">${label}</div><div class="intent-field-value">${value}</div></div>`;
+    }
+
+    function tagListHtml(items, cls) {
+      if (!items.length) return '';
+      return `<div class="tag-list">${items.map(i => `<span class="tag ${cls}">${escHtml(i)}</span>`).join('')}</div>`;
+    }
+
+    function scrollThread() {
+      thread.scrollTop = thread.scrollHeight;
+    }
+
+    /* ──────────────────────────────────────────
+       DOM helpers — Right Panel
+    ────────────────────────────────────────── */
+    function clearResults() {
+      panelRes.innerHTML = '';
+      const h = document.createElement('div');
+      h.className = 'results-empty';
+      h.id = 'results-empty';
+      h.innerHTML = `
+        <div class="results-empty-icon">⚕</div>
+        <p class="results-empty-text">Analysing consultation…</p>
+      `;
+      panelRes.appendChild(h);
+    }
+
+    function renderResults(recs) {
+      panelRes.innerHTML = '';
+
+      if (!recs || recs.length === 0) {
+        panelRes.innerHTML = `
+          <div class="results-empty">
+            <div class="results-empty-icon">∅</div>
+            <p class="results-empty-text">No matching products found after safety filtering. Try a different consultation.</p>
+          </div>`;
+        return;
+      }
+
+      // Header
+      const hdr = document.createElement('div');
+      hdr.className = 'results-header';
+      hdr.innerHTML = `
+        <span class="results-title">Recommendations</span>
+        <span class="results-count">${recs.length} product${recs.length !== 1 ? 's' : ''}</span>
+      `;
+      panelRes.appendChild(hdr);
+
+      recs.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = `product-card${i === 0 ? ' rank-1' : ''}`;
+
+        const isRx = String(p.is_prescription_required).toLowerCase();
+        const rxBadge = (isRx === '1' || isRx === 'yes' || isRx === 'true')
+          ? '<span class="product-badge rx">Rx</span>'
+          : '<span class="product-badge otc">OTC</span>';
+
+        const vegBadge = (String(p.is_vegetarian).toLowerCase() === 'yes')
+          ? '<span class="product-badge veg">Vegetarian</span>' : '';
+
+        const formBadge = p.product_form && p.product_form !== 'nan'
+          ? `<span class="product-badge">${escHtml(p.product_form)}</span>` : '';
+
+        const catBadge = p.classifier_1 && p.classifier_1 !== 'nan'
+          ? `<span class="product-badge">${escHtml(p.classifier_1)}</span>` : '';
+
+        const price = p.price != null && !isNaN(p.price)
+          ? `<div class="product-price">₹${Number(p.price).toFixed(2)} <span>MRP</span></div>` : '';
+
+        const scoreWidth = Math.min(Math.round(p.composite_score * 100), 100);
+
+        const reasons = (p.reasons || []).map(r =>
+          `<div class="product-reason"><span class="product-reason-icon">✓</span><span>${escHtml(r.replace(/^✓\s*/, ''))}</span></div>`
+        ).join('');
+
+        card.innerHTML = `
+          <div class="product-rank${i === 0 ? ' rank-1' : ''}">#${p.rank}</div>
+          <div class="product-name">${escHtml(p.name)}</div>
+          ${p.molecules && p.molecules !== 'nan' ? `<div class="product-molecule">${escHtml(p.molecules)}</div>` : ''}
+          <div class="product-meta">
+            ${rxBadge}
+            ${vegBadge}
+            ${formBadge}
+            ${catBadge}
+          </div>
+          <div class="product-score-bar">
+            <div class="product-score-fill" style="width:${scoreWidth}%"></div>
+          </div>
+          ${reasons ? `<div class="product-reasons">${reasons}</div>` : ''}
+          ${price}
+        `;
+
+        panelRes.appendChild(card);
+      });
+    }
+
+    /* ──────────────────────────────────────────
+       Utilities
+    ────────────────────────────────────────── */
+    function arr(v) {
+      if (!v) return [];
+      if (Array.isArray(v)) return v.filter(Boolean);
+      return [v].filter(Boolean);
+    }
+
+    function escHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>

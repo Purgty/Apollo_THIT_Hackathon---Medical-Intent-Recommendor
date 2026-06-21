@@ -1,0 +1,113 @@
+version: "3.9"
+
+# =============================================================================
+# Apollo Clinical Intelligence — Docker Compose
+# =============================================================================
+#
+# PREREQUISITES:
+#   1. LM Studio is running on the HOST with the Local Server started.
+#      Load JSL MedLlama 3 8B v2.0 and click "Start Server" on port 1234.
+#
+#   2. Either:
+#      (a) Pre-built artifacts (recommended):
+#          Run Stage 1 & 2 locally first. The artifacts/ directory
+#          will be mounted read-only into the container.
+#
+#      (b) First-run build:
+#          Mount the raw catalog CSV and let the entrypoint run
+#          Stage 1 & 2 automatically inside the container (~30 min).
+#
+# USAGE:
+#   # Option A — pre-built artifacts (fast startup):
+#   docker compose up --build
+#
+#   # Option B — build artifacts inside container (first run):
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+#
+#   # Open the app:
+#   http://localhost:8000/app/
+# =============================================================================
+
+services:
+  apollo-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: apollo-clinical-api:latest
+    container_name: apollo_clinical_api
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # ── Pre-built FAISS artifacts (mounted read-only) ──────────────────────
+      # If you have already run Stage 1 & 2 locally, these will be present
+      # and the entrypoint will skip building them.
+      - ./final_implementation/artifacts:/app/final_implementation/artifacts
+
+      # ── Raw catalog CSV (needed only if artifacts do NOT exist) ─────────────
+      # Uncomment if you want the container to build artifacts from scratch:
+      # - ./End_Pipeline/Main_Apollo_Catalog.csv:/data/Main_Apollo_Catalog.csv:ro
+
+      # ── HuggingFace model cache (avoids re-downloading between restarts) ───
+      - hf_model_cache:/root/.cache/huggingface
+
+    environment:
+      # LM Studio running on the HOST machine
+      # Windows / Mac: host.docker.internal works natively
+      # Linux: requires the extra_hosts entry below
+      LM_STUDIO_BASE_URL: "http://host.docker.internal:1234/v1"
+      LM_STUDIO_API_KEY: "lm-studio"
+      LM_STUDIO_MODEL: "local-model"
+
+      # Paths
+      ARTIFACTS_DIR: "/app/final_implementation/artifacts"
+      CATALOG_RAW_PATH: "/data/Main_Apollo_Catalog.csv"
+
+      # Pipeline tuning
+      FAISS_TOP_K_CANDIDATES: "50"
+      FINAL_TOP_K: "10"
+      MAX_VECTOR_DISTANCE: "2.0"
+
+      # LLM settings
+      LLM_TIMEOUT_SECONDS: "180"
+      LLM_MAX_RETRIES: "3"
+      LLM_TEMPERATURE: "0.0"
+      LLM_MAX_TOKENS: "1024"
+
+      # API server
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      API_WORKERS: "1"
+      API_RELOAD: "false"
+
+      # Python
+      PYTHONPATH: "/app"
+      PYTHONUNBUFFERED: "1"
+      PYTHONIOENCODING: "utf-8"
+      HF_HUB_DISABLE_SYMLINKS_WARNING: "1"
+
+    extra_hosts:
+      # Enables host.docker.internal on Linux
+      # (natively supported on Windows and Mac Docker Desktop)
+      - "host.docker.internal:host-gateway"
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+# ── Named volumes ──────────────────────────────────────────────────────────────
+volumes:
+  hf_model_cache:
+    driver: local
