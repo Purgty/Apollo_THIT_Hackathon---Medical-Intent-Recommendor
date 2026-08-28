@@ -18,7 +18,7 @@
 
 <br/>
 
-![Apollo Clinical Intelligence — Welcome Screen](docs/screenshots/app-welcome-2.png)
+![Apollo Clinical Intelligence — Welcome Screen](docs/screenshots/app-welcome.png)
 *Editorial UI built with Cormorant Garamond & DM Sans*
 
 ![Apollo Clinical Intelligence — Recommendation Screen](docs/screenshots/app-recommendation.png)
