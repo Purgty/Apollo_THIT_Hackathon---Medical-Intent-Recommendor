@@ -6,7 +6,7 @@
 
 ### AI-powered clinical product recommendation engine for pharmacy care
 
-*Stryker × Apollo Hospitals — THIT Solvathon 2025*
+*Apollo Hospitals — THIT Solvathon 2025*
 
 <br/>
 
