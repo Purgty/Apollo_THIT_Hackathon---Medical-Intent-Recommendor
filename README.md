@@ -333,4 +333,4 @@ This system is designed with clinical-grade engineering standards:
 
 ## License
 
-[MIT License](LICENSE) — © 2025 Stryker × Apollo Hospitals
+[MIT License](LICENSE)
